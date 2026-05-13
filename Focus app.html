@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepFocus Suite - shahwaiz</title>
+    <style>
+        :root {
+            --bg-dark: #0f0f13;
+            --bg-card: #1a1a24;
+            --bg-card-hover: #22222e;
+            --text-main: #eaeaea;
+            --text-muted: #6c6c80;
+            --accent-green: #2ecc71;
+            --accent-green-glow: rgba(46, 204, 113, 0.2);
+            --accent-red: #e74c3c;
+            --accent-red-glow: rgba(231, 76, 60, 0.2);
+            --accent-blue: #3498db;
+            --border: #2a2a3a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- HEADER --- */
+        .main-header {
+            height: 60px;
+            background: rgba(26, 26, 36, 0.9);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            flex-shrink: 0;
+            z-index: 100;
+        }
+
+        .brand-name { font-weight: 800; font-size: 1.4rem; letter-spacing: -0.5px; color: var(--accent-green); text-transform: uppercase;}
+        .user-stats-top { font-size: 0.9rem; color: var(--text-muted); }
+        .user-stats-top span { color: var(--accent-green); font-weight: bold; }
+
+        /* Main Grid Layout */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1fr;
+            gap: 20px;
+            padding: 20px;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .col { display: flex; flex-direction: column; gap: 20px; overflow-y: auto; }
+        .col::-webkit-scrollbar { width: 6px; }
+        .col::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card-header {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* --- POMODORO TIMER --- */
+        .timer-display {
+            font-size: 5rem;
+            font-weight: 200;
+            text-align: center;
+            margin: 20px 0;
+            letter-spacing: -2px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-display.break-mode { color: var(--accent-blue); }
+
+        .timer-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: auto;
+        }
+
+        .btn {
+            padding: 12px 25px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .btn-primary { background: var(--accent-green); color: #000; }
+        .btn-primary:hover { background: #27ae60; transform: translateY(-2px); box-shadow: 0 5px 15px var(--accent-green-glow); }
+        .btn-danger { background: transparent; border: 1px solid var(--accent-red); color: var(--accent-red); }
+        .btn-danger:hover { background: var(--accent-red); color: white; }
+        .btn-secondary { background: var(--bg-card-hover); color: var(--text-main); border: 1px solid var(--border); }
+        .btn-secondary:hover { background: var(--border); }
+
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+        /* --- WHITE NOISE --- */
+        .noise-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .noise-btn {
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .noise-btn.active {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            background: rgba(46, 204, 113, 0.05);
+        }
+
+        /* --- KUYE BOOK (GAMIFICATION REPLACEMENT) --- */
+        .book-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: radial-gradient(circle at bottom, #1a1a2a 0%, var(--bg-dark) 70%);
+            border-radius: 16px;
+            overflow: hidden;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .book-display {
+            font-size: 6rem;
+            margin-bottom: 20px;
+            transition: all 0.5s ease;
+            filter: drop-shadow(0 0 15px rgba(0,0,0,0.5));
+        }
+
+        .book-display.burning { animation: burnEffect 0.5s forwards; }
+
+        @keyframes burnEffect {
+            0% { transform: scale(1); filter: none; }
+            50% { transform: scale(1.2); filter: brightness(2) hue-rotate(-50deg); }
+            100% { transform: scale(0.8) rotate(10deg); filter: grayscale(100%) brightness(0.5); opacity: 0.5; }
+        }
+
+        .book-display.collected { animation: popEffect 0.5s ease; }
+
+        @keyframes popEffect {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .book-status-text {
+            font-size: 1rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+        }
+
+        .book-status-text.active { color: var(--accent-blue); }
+        .book-status-text.success { color: var(--accent-green); }
+        .book-status-text.fail { color: var(--accent-red); }
+
+        .books-collection {
+            display: flex;
+            gap: 10px;
+            margin-top: 25px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .mini-book {
+            font-size: 1.5rem;
+            background: var(--bg-dark);
+            padding: 5px 10px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            animation: popEffect 0.3s ease;
+        }
+
+        /* --- APP BLOCKERS --- */
+        .blocker-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .app-icon {
+            aspect-ratio: 1;
+            background: var(--bg-dark);
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .app-icon:hover { background: var(--bg-card-hover); transform: scale(1.05); }
+
+        .app-icon.blocked {
+            border-color: var(--accent-red);
+            cursor: not-allowed;
+        }
+
+        .app-icon.blocked::after {
+            content: '🔒';
+            position: absolute;
+            font-size: 1.5rem;
+            top: -5px;
+            right: -5px;
+            background: var(--bg-card);
+            border-radius: 50%;
+            padding: 2px;
+        }
+
+        .app-name { font-size: 0.7rem; margin-top: 5px; color: var(--text-muted); }
+
+        /* --- TO DO LIST --- */
+        .todo-input-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .todo-input {
+            flex: 1;
+            background: var(--bg-dark);
+            border: 1px solid var(--border);
+            padding: 12px 15px;
+            border-radius: 10px;
+            color: white;
+            outline: none;
+        }
+
+        .todo-input:focus { border-color: var(--accent-green); }
+
+        .todo-list { list-style: none; flex: 1; overflow-y: auto; }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--bg-dark);
+            margin-bottom: 8px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .todo-item:hover { border-color: var(--border); }
+
+        .todo-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--text-muted);
+            border-radius: 50%;
+            margin-right: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .todo-item.done .todo-checkbox { background: var(--accent-green); border-color: var(--accent-green); }
+        .todo-item.done .todo-text { text-decoration: line-through; color: var(--text-muted); }
+
+        /* --- STATISTICS --- */
+        .chart-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 150px;
+            padding-top: 20px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 15px;
+        }
+
+        .bar-group { display: flex; flex-direction: column; align-items: center; gap: 8px; width: 12%; }
+
+        .bar {
+            width: 100%;
+            background: var(--accent-green);
+            border-radius: 4px 4px 0 0;
+            transition: height 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            min-height: 4px;
+        }
+
+        .bar.fail { background: var(--accent-red); }
+        .bar-label { font-size: 0.7rem; color: var(--text-muted); }
+
+        .stats-summary { display: flex; justify-content: space-between; text-align: center; }
+        .stat-box h4 { font-size: 1.5rem; color: var(--text-main); }
+        .stat-box p { font-size: 0.8rem; color: var(--text-muted); }
+        .stat-box.success h4 { color: var(--accent-green); }
+        .stat-box.fail h4 { color: var(--accent-red); }
+
+        /* --- TOAST NOTIFICATIONS --- */
+        .toast-container {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .toast {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 15px 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .toast.warning { border-left: 4px solid var(--accent-red); }
+        .toast.success { border-left: 4px solid var(--accent-green); }
+
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes fadeOut { to { opacity: 0; transform: translateY(10px); } }
+
+        /* --- FOOTER --- */
+        .main-footer {
+            height: 50px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .main-footer span { color: var(--accent-green); font-weight: 700; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .dashboard { grid-template-columns: 1fr 1fr; height: auto; overflow-y: auto; }
+            body { height: auto; overflow: auto; }
+        }
+        @media (max-width: 768px) {
+            .dashboard { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HEADER -->
+    <header class="main-header">
+        <div class="brand-name">shahwaiz</div>
+        <div class="user-stats-top">Total Focus Time Today: <span id="totalTimeDisplay">0h 0m</span></div>
+    </header>
+
+    <main class="dashboard">
+        <!-- LEFT COLUMN: Timer & Noise -->
+        <div class="col">
+            <div class="card" style="flex: 2;">
+                <div class="card-header">⏱️ Pomodoro Timer</div>
+                <div class="timer-display" id="timerDisplay">5:00</div>                <div style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;" id="sessionLabel">Ready to focus?</div>
+                
+                <div class="timer-controls">
+                    <button class="btn btn-primary" id="startBtn">Start Focus</button>
+                    <button class="btn btn-secondary" id="pauseBtn" disabled>Pause</button>
+                    <button class="btn btn-danger" id="giveUpBtn" disabled>Give Up</button>
+                </div>
+            </div>
+
+            <div class="card" style="flex: 1;">
+                <div class="card-header">🎧 Ambient Sounds</div>
+                <div class="noise-options">
+                    <div class="noise-btn active" data-noise="off">🔇 Off</div>
+                    <div class="noise-btn" data-noise="rain">🌧️ Rain</div>
+                    <div class="noise-btn" data-noise="cafe">☕ Cafe</div>
+                    <div class="noise-btn" data-noise="tick">⏰ Ticking</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MIDDLE COLUMN: Kuye Book & Blockers -->
+        <div class="col">
+            <div class="card" style="flex: 2;">
+                <div class="card-header">📚 book-display - Gamification</div>
+                <div class="book-container">
+                    <div class="book-display" id="bookDisplay">📖</div>
+                    <div class="book-status-text" id="bookStatus">Start focus to read a book</div>
+                    
+                    <div class="books-collection" id="booksCollection"></div>
+                </div>
+            </div>
+
+            <div class="card" style="flex: 1;">
+                <div class="card-header">🚫 App Blockers</div>
+                <div class="blocker-grid">
+                    <div class="app-icon" data-app="Instagram" data-url="https://www.instagram.com">
+                        <span>📸</span>
+                        <span class="app-name">Instagram</span>
+                    </div>
+                    <div class="app-icon" data-app="YouTube" data-url="https://www.youtube.com">
+                        <span>▶️</span>
+                        <span class="app-name">YouTube</span>
+                    </div>
+                    <div class="app-icon" data-app="TikTok" data-url="https://www.tiktok.com">
+                        <span>🎵</span>
+                        <span class="app-name">TikTok</span>
+                    </div>
+                    <div class="app-icon" data-app="Twitter" data-url="https://www.twitter.com">
+                        <span>🐦</span>
+                        <span class="app-name">Twitter</span>
+                    </div>
+                    <div class="app-icon" data-app="Reddit" data-url="https://www.reddit.com">
+                        <span>🤖</span>
+                        <span class="app-name">Reddit</span>
+                    </div>
+                    <div class="app-icon" data-app="Games" data-url="https://www.crazygames.com">
+                        <span>🎮</span>
+                        <span class="app-name">Games</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RIGHT COLUMN: To-Do & Stats -->
+        <div class="col">
+            <div class="card" style="flex: 2;">
+                <div class="card-header">📝 Focus Tasks</div>
+                <div class="todo-input-container">
+                    <input type="text" class="todo-input" id="todoInput" placeholder="Add a task to focus on...">
+                    <button class="btn btn-secondary" id="addTodoBtn">Add</button>
+                </div>
+                <ul class="todo-list" id="todoList"></ul>
+            </div>
+
+            <div class="card" style="flex: 1;">
+                <div class="card-header">📊 Weekly Report</div>
+                <div class="chart-container" id="weekChart"></div>
+                <div class="stats-summary">
+                    <div class="stat-box success">
+                        <h4 id="successCount">0</h4>
+                        <p>Completed</p>
+                    </div>
+                    <div class="stat-box fail">
+                        <h4 id="failCount">0</h4>
+                        <p>Failed</p>
+                    </div>
+                    <div class="stat-box">
+                        <h4 id="tasksCompleted">0</h4>
+                        <p>Tasks Done</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="main-footer">
+        <p>&copy; 2023 <span>shahwaiz</span>. All rights reserved.</p>
+    </footer>
+
+    <!-- Toast Notification Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        // --- APP STATE ---
+        const state = {
+            isRunning: false,
+            isPaused: false,
+            isBreak: false,
+            timeLeft: 5 * 60,
+            currentInterval: null,
+            stats: { success: 0, fail: 0 },
+            tasksDone: 0,
+            audioCtx: null,
+            currentNoise: null,
+            weeklyData: [0, 0, 0, 0, 0, 0, 0],
+            collectedBooks: [],
+            currentBookEmoji: ['📕', '📗', '📘', '📙', '📓', '📔', '📒', '📚']
+        };
+
+        // Book Window ka reference yahan store hoga
+        let bookWindow = null;
+
+        // --- DOM ELEMENTS ---
+        const elements = {
+            timer: document.getElementById('timerDisplay'),
+            startBtn: document.getElementById('startBtn'),
+            pauseBtn: document.getElementById('pauseBtn'),
+            giveUpBtn: document.getElementById('giveUpBtn'),
+            label: document.getElementById('sessionLabel'),
+            bookDisplay: document.getElementById('bookDisplay'),
+            bookStatus: document.getElementById('bookStatus'),
+            booksCollection: document.getElementById('booksCollection'),
+            todoInput: document.getElementById('todoInput'),
+            todoList: document.getElementById('todoList'),
+            addTodo: document.getElementById('addTodoBtn'),
+            weekChart: document.getElementById('weekChart'),
+            successCount: document.getElementById('successCount'),
+            failCount: document.getElementById('failCount'),
+            tasksCompleted: document.getElementById('tasksCompleted'),
+            totalTime: document.getElementById('totalTimeDisplay'),
+            appIcons: document.querySelectorAll('.app-icon'),
+            noiseBtns: document.querySelectorAll('.noise-btn')
+        };
+
+        // --- INITIALIZE ---
+        function init() {
+            setupEventListeners();
+            renderChart();
+            updateStatsUI();
+            addTask('Finish project proposal');
+            addTask('Complete Assignment');
+        }
+
+        function setupEventListeners() {
+            elements.startBtn.addEventListener('click', startTimer);
+            elements.pauseBtn.addEventListener('click', togglePause);
+            elements.giveUpBtn.addEventListener('click', giveUp);
+            elements.addTodo.addEventListener('click', () => handleAddTask());
+            elements.todoInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') handleAddTask(); });
+            
+            elements.appIcons.forEach(icon => {
+                icon.addEventListener('click', () => {
+                    const appName = icon.dataset.app;
+                    const appUrl = icon.dataset.url;
+                    
+                    if (state.isRunning) {
+                        showToast(`🚫 ${appName} is blocked! Stay focused.`, 'warning');
+                        icon.style.animation = 'shake 0.5s';
+                        setTimeout(() => icon.style.animation = '', 500);
+                    } else {
+                        showToast(`✅ Opening ${appName}...`, 'success');
+                        setTimeout(() => { window.open(appUrl, '_blank'); }, 500);
+                    }
+                });
+            });
+
+            elements.noiseBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    elements.noiseBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    toggleAudio(btn.dataset.noise);
+                });
+            });
+        }
+
+        // --- BOOK OPEN & CLOSE LOGIC ---
+        function openStoryBook() {
+            if (bookWindow && !bookWindow.closed) {
+                bookWindow.close();
+            }
+
+            bookWindow = window.open('', '_blank', 'width=800,height=900,left=300,top=50');
+
+            const bookContent = `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <title>Kuye Stories - Read Now</title>
+                <style>
+                    body {
+                        font-family: 'Georgia', serif;
+                        background-color: #fdf6e3;
+                        color: #4a4a4a;
+                        padding: 40px 60px;
+                        line-height: 1.8;
+                        max-width: 800px;
+                        margin: 0 auto;
+                    }
+                    h1 {
+                        text-align: center;
+                        color: #8b4513;
+                        border-bottom: 3px double #8b4513;
+                        padding-bottom: 15px;
+                        margin-bottom: 40px;
+                        font-size: 2.5rem;
+                    }
+                    .story {
+                        margin-bottom: 50px;
+                        background: white;
+                        padding: 25px;
+                        border-radius: 10px;
+                        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+                        border-left: 5px solid #8b4513;
+                    }
+                    .story h2 {
+                        color: #a0522d;
+                        margin-bottom: 15px;
+                        font-size: 1.5rem;
+                    }
+                    .story p {
+                        text-align: justify;
+                        font-size: 1.1rem;
+                    }
+                    .footer-note {
+                        text-align: center;
+                        margin-top: 40px;
+                        font-style: italic;
+                        color: #888;
+                    }
+                </style>
+            </head>
+            <body>
+                <h1>📖 Kuye Stories</h1>
+                
+                <div class="story">
+                    <h2>1. The Power of Focus (The Crow and The Pitcher)</h2>
+                    <p>
+                        A thirsty crow was flying around looking for water. Finally, he saw a pitcher with a little water at the bottom, but his beak couldn't reach it. 
+                        Instead of giving up and flying away, the crow focused on the solution. He started picking up small pebbles and dropping them into the pitcher, one by one. 
+                        With each pebble, the water level rose a little higher. Eventually, the water came to the top, and the crow quenched his thirst. 
+                        <br><br>
+                        <strong>Moral:</strong> Success is not about massive leaps; it's about consistent, focused small efforts. Don't get distracted by the distance, just drop the next pebble.
+                    </p>
+                </div>
+
+                <div class="story">
+                    <h2>2. The Two Wolves Inside Us</h2>
+                    <p>
+                        An old chief was teaching his grandson about life. "A fight is going on inside me," he said. "It is a terrible fight between two wolves. 
+                        One is evil – he is anger, envy, sorrow, regret, greed, arrogance, self-pity, guilt, resentment, inferiority, lies, false pride, superiority, and ego."
+                        <br><br>
+                        He continued, "The other is good – he is joy, peace, love, hope, serenity, humility, kindness, benevolence, empathy, generosity, truth, compassion, and faith. 
+                        The same fight is going on inside you – and inside every other person, too."
+                        <br><br>
+                        The grandson thought about it for a minute and then asked his grandfather, "Which wolf will win?"
+                        <br><br>
+                        The old chief simply replied, <strong>"The one you feed."</strong>
+                    </p>
+                </div>
+
+                <div class="story">
+                    <h2>3. The Value of Time</h2>
+                    <p>
+                        A man went to a wise sage and asked, "What is the most valuable thing in the world?" 
+                        The sage handed him a small empty bowl and said, "Go to the market and try to fill this bowl with the most valuable thing you can find. 
+                        But remember, you cannot fill it with gold, silver, or diamonds."
+                        <br><br>
+                        The man went to the market and tried filling it with beautiful flowers, but they withered. He tried exotic fruits, but they rotted. He tried silk, but it couldn't hold a shape. 
+                        Defeated, he returned to the sage. The sage smiled, picked up an hourglass, and turned it upside down, letting the sand fall into the bowl. 
+                        <br><br>
+                        <strong>Moral:</strong> Time is the only thing that truly fills our lives. Once it falls, you cannot get it back. Focus on your time, for it is your greatest wealth.
+                    </p>
+                </div>
+
+                <div class="footer-note">
+                    Close this tab to return to your DeepFocus Suite - shahwaiz
+                </div>
+
+            </body>
+            </html>
+            `;
+
+            bookWindow.document.write(bookContent);
+            bookWindow.document.close();
+        }
+
+        function closeStoryBook() {
+            if (bookWindow && !bookWindow.closed) {
+                bookWindow.close();
+            }
+        }
+
+        // --- TIMER LOGIC ---
+        function startTimer() {
+            if (state.isRunning) return;
+            
+            state.isRunning = true;
+            state.isPaused = false;
+            updateButtonStates();
+            setBlockers(true);
+            
+            if (!state.isBreak) {
+                setBookState('reading');
+                elements.label.innerText = "Deep work in progress...";
+                openStoryBook();
+                showToast('📚 Kuye Story Book opened! Read carefully.', 'success');
+            } else {
+                elements.label.innerText = "Take a break! Relax your eyes.";
+                elements.timer.classList.add('break-mode');
+            }
+
+            state.currentInterval = setInterval(() => {
+                if (!state.isPaused) {
+                    state.timeLeft--;
+                    updateTimerDisplay();
+                    if (state.timeLeft <= 0) {
+                        clearInterval(state.currentInterval);
+                        handleSessionEnd();
+                    }
+                }
+            }, 1000);
+        }
+
+        function togglePause() {
+            state.isPaused = !state.isPaused;
+            elements.pauseBtn.innerText = state.isPaused ? 'Resume' : 'Pause';
+            elements.label.innerText = state.isPaused ? "Paused." : (state.isBreak ? "Take a break!" : "Deep work in progress...");
+        }
+
+        function giveUp() {
+            clearInterval(state.currentInterval);
+            state.isRunning = false;
+            state.isBreak = false;
+            state.timeLeft = 5 * 60;
+            
+            updateTimerDisplay();
+            updateButtonStates();
+            setBlockers(false);
+            setBookState('burned');
+            elements.label.innerText = "Book burned! Try again!";
+            elements.timer.classList.remove('break-mode');
+            
+            closeStoryBook();
+            
+            state.stats.fail++;
+            updateStatsUI();
+            showToast('🔥 Your book caught fire! Stay strong next time.', 'warning');
+        }
+
+        function handleSessionEnd() {
+            state.isRunning = false;
+            
+            if (!state.isBreak) {
+                state.stats.success++;
+                setBookState('collected');
+                showToast('📚 Great work! Book added to your shelf.', 'success');
+                
+                closeStoryBook();
+                
+                state.isBreak = true;
+                state.timeLeft = 5 * 60;
+                elements.timer.classList.add('break-mode');
+            } else {
+                showToast('⏰ Break over! Ready for another session?', 'success');
+                state.isBreak = false;
+                state.timeLeft = 5 * 60;
+                elements.timer.classList.remove('break-mode');
+                setBookState('idle');
+                setBlockers(false);
+            }
+
+            updateTimerDisplay();
+            updateButtonStates();
+            updateStatsUI();
+        }
+
+        function updateTimerDisplay() {
+            const mins = Math.floor(state.timeLeft / 60);
+            const secs = state.timeLeft % 60;
+            elements.timer.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            const totalMins = state.stats.success * 5;
+            elements.totalTime.innerText = `${Math.floor(totalMins/60)}h ${totalMins%60}m`;
+        }
+
+        function updateButtonStates() {
+            elements.startBtn.disabled = state.isRunning;
+            elements.pauseBtn.disabled = !state.isRunning;
+            elements.giveUpBtn.disabled = !state.isRunning || state.isBreak;
+        }
+
+        // --- KUYE BOOK (GAMIFICATION) LOGIC ---
+        function setBookState(status) {
+            const display = elements.bookDisplay;
+            const statusText = elements.bookStatus;
+            const collection = elements.booksCollection;
+            
+            display.className = 'book-display';
+            statusText.className = 'book-status-text';
+
+            if (status === 'idle') {
+                display.innerText = '📖';
+                statusText.innerText = "Start focus to read a book";
+            } else if (status === 'reading') {
+                const randomBook = state.currentBookEmoji[Math.floor(Math.random() * state.currentBookEmoji.length)];
+                display.innerText = randomBook;
+                statusText.innerText = "Reading in progress...";
+                statusText.classList.add('active');
+            } else if (status === 'collected') {
+                const newBook = display.innerText;
+                state.collectedBooks.push(newBook);
+                const miniBook = document.createElement('div');
+                miniBook.className = 'mini-book';
+                miniBook.innerText = newBook;
+                collection.appendChild(miniBook);
+                display.classList.add('collected');
+                statusText.innerText = `Book Collected! (${state.collectedBooks.length} Total)`;
+                statusText.classList.add('success');
+            } else if (status === 'burned') {
+                display.classList.add('burning');
+                statusText.innerText = "Book Burned! 🥀";
+                statusText.classList.add('fail');
+            }
+        }
+
+        // --- APP BLOCKERS LOGIC ---
+        function setBlockers(isLocked) {
+            elements.appIcons.forEach(icon => {
+                if (isLocked) { icon.classList.add('blocked'); } 
+                else { icon.classList.remove('blocked'); }
+            });
+        }
+
+        // --- TO-DO LIST LOGIC ---
+        function handleAddTask() {
+            const text = elements.todoInput.value.trim();
+            if (text) { addTask(text); elements.todoInput.value = ''; }
+        }
+
+        function addTask(text) {
+            const li = document.createElement('li');
+            li.className = 'todo-item';
+            li.innerHTML = `<div class="todo-checkbox" onclick="toggleTask(this)"></div><span class="todo-text">${text}</span>`;
+            elements.todoList.prepend(li);
+        }
+
+        function toggleTask(checkbox) {
+            const item = checkbox.parentElement;
+            item.classList.toggle('done');
+            if (item.classList.contains('done')) { state.tasksDone++; showToast('✅ Task completed!', 'success'); } 
+            else { state.tasksDone--; }
+            updateStatsUI();
+        }
+
+        // --- STATISTICS LOGIC ---
+        function updateStatsUI() {
+            elements.successCount.innerText = state.stats.success;
+            elements.failCount.innerText = state.stats.fail;
+            elements.tasksCompleted.innerText = state.tasksDone;
+            state.weeklyData[state.weeklyData.length - 1] = state.stats.success;
+            renderChart();
+        }
+
+        function renderChart() {
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            elements.weekChart.innerHTML = '';
+            const maxVal = Math.max(...state.weeklyData, 1);
+            
+            state.weeklyData.forEach((val, index) => {
+                const group = document.createElement('div');
+                group.className = 'bar-group';
+                const height = index === state.weeklyData.length - 1 ? (val / maxVal) * 100 : Math.random() * 80;
+                group.innerHTML = `<div class="bar" style="height: ${height}%"></div><span class="bar-label">${days[index]}</span>`;
+                if (index === state.weeklyData.length - 1 && state.stats.fail > state.stats.success) {
+                    group.querySelector('.bar').classList.add('fail');
+                }
+                elements.weekChart.appendChild(group);
+            });
+        }
+
+        // --- AUDIO LOGIC (Web Audio API) ---
+        function toggleAudio(type) {
+            if (state.currentNoise) {
+                state.currentNoise.stop();
+                state.currentNoise = null;
+                if (state.audioCtx) state.audioCtx.close();
+                state.audioCtx = null;
+                if (type === 'off') return;
+            }
+            if (type === 'off') return;
+
+            state.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            
+            if (type === 'rain' || type === 'cafe') {
+                const bufferSize = 2 * state.audioCtx.sampleRate;
+                const noiseBuffer = state.audioCtx.createBuffer(1, bufferSize, state.audioCtx.sampleRate);
+                const output = noiseBuffer.getChannelData(0);
+                let lastOut = 0.0;
+                for (let i = 0; i < bufferSize; i++) {
+                    const white = Math.random() * 2 - 1;
+                    if (type === 'rain') { output[i] = (lastOut + (0.02 * white)) / 1.02; lastOut = output[i]; output[i] *= 3.5; } 
+                    else { output[i] = white; }
+                }
+                const noise = state.audioCtx.createBufferSource();
+                noise.buffer = noiseBuffer;
+                noise.loop = true;
+                const filter = state.audioCtx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.value = type === 'rain' ? 1000 : 4000;
+                noise.connect(filter);
+                filter.connect(state.audioCtx.destination);
+                noise.start();
+                state.currentNoise = noise;
+            } else if (type === 'tick') {
+                function createTick() {
+                    if (!state.audioCtx) return;
+                    const osc = state.audioCtx.createOscillator();
+                    const gain = state.audioCtx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = 800;
+                    gain.gain.setValueAtTime(0.3, state.audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, state.audioCtx.currentTime + 0.1);
+                    osc.connect(gain);
+                    gain.connect(state.audioCtx.destination);
+                    osc.start();
+                    osc.stop(state.audioCtx.currentTime + 0.1);
+                    state.tickTimeout = setTimeout(createTick, 1000);
+                }
+                createTick();
+                state.currentNoise = { stop: () => { clearTimeout(state.tickTimeout); } };
+            }
+        }
+
+        // --- TOAST UI ---
+        function showToast(message, type) {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.innerText = message;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, 3000);
+        }
+
+        // Add simple shake animation CSS dynamically
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = `@keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }`;
+        document.head.appendChild(styleSheet);
+
+        // Start App
+        init();
+
+    </script>
+</body>
+</html>
